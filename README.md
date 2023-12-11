@@ -1,10 +1,10 @@
-# alireza0.github.io
+# 3yed-61.github.io
 
 ## About the website
 The site is built with [Hugo](https://gohugo.io/) and uses the [Docsy](https://www.docsy.dev/) theme.
 
 ### Website content
-The website contains everything presented by the [alireza0 documentation website](https://alireza0.github.io/).
+The website contains everything presented by the [3yed-61 documentation website](https://3yed-61.github.io/).
 
 ### Document Organization
 The article content of the website is under the content directory, and the specific organizational structure is as follows:
@@ -34,7 +34,7 @@ More advice on how to edit pages is available on the [Hugo](https://gohugo.io/) 
 ### Correspondence between directory and main menu
 Folder name|Menu name
 --|--
-about|About alireza0
+about|About 3yed-61
 guide|Quick start
 config|Configuration document
 documents|Reviews
@@ -48,7 +48,7 @@ Some menus also have secondary menus, just view the content directly below them.
 
 ###Improve website content
 
-- You can help us improve what the alireza0 documentation site presents by modifying the documentation in this repository.
+- You can help us improve what the 3yed-61 documentation site presents by modifying the documentation in this repository.
 
 - After you add or modify, submit your modification and issue a PR to this warehouse.
 
