@@ -1,0 +1,370 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>3yed's Docs – راهنما</title><link>/fa/docs/</link><description>Recent content in راهنما on 3yed's Docs</description><generator>Hugo -- gohugo.io</generator><language>fa</language><atom:link href="/fa/docs/index.xml" rel="self" type="application/rss+xml"/><item><title>Docs: اتصال به پنل</title><link>/fa/docs/security/https/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/fa/docs/security/https/</guid><description>
+&lt;p>در نظر داشته باشید ارتباط شما با پنل در صورت عدم استفاده از گواهی دیجیتال (HTTPS)، توسط فیلترچی و حتی MITM ها قابل رویت است.
+بعد از نصب سرور و قبل از تنظیم و ارسال هرگونه اطلاعات حساس به سرور، حتما از اینکه ارتباط شما با سرور امن است مطمئن شوید.&lt;/p>
+&lt;h3 id="نمونه-راه-های-امن-سازی">نمونه راه های امن سازی&lt;/h3>
+&lt;ol>
+&lt;li>استفاده از گواهی دیجیتال در تنظیمات سرور&lt;/li>
+&lt;li>استفاده از نرم افزار های پراکسی مانند nginx&lt;/li>
+&lt;li>استفاده از پراکسی های ابری مانند کلادفلر&lt;/li>
+&lt;li>استفاده از ssh tunnel برای باز کردن پنل&lt;/li>
+&lt;/ol></description></item><item><title>Docs: فایروال</title><link>/fa/docs/security/firewall/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/fa/docs/security/firewall/</guid><description>
+&lt;h2 id="چرا-فایروال-سیستم-مهم-است">چرا فایروال سیستم مهم است&lt;/h2>
+&lt;p>ربات ها برای اینکه سرور ارائه دهنده خدمات v2ray را شناسایی کنند، روشهای متعددی را استفاده میکنند.
+یکی از این روش ها شبیه سازی اتصال با پروتکل های v2ray و ارزیابی جواب آنهاست.
+در اکثر مواقع این عملیات توسط رباتهایی با آدرس IP های شرکت ارتباطات زیرساخت انجام میشود. به همین دلیل بهتر است این آدرس ها شناسایی و بلاک شوند.&lt;/p>
+&lt;p>لیست آدرس ها را میتوانید از منابع زیر پیدا کنید:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>&lt;a href="https://bgp.he.net/AS49666#_prefixes">bgp.he.net report&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="https://stat-ui.stat.ripe.net/data/announced-prefixes/data.json?data_overload_limit=ignore&amp;amp;resource=AS49666&amp;amp;starttime=1694525594&amp;amp;min_peers_seeing=10">ripe ncc api query&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>در مواردی این موضوع توسط رباتهایی از سایر نقاط هم دیده شده که در واقع این عملیات برای پیدا کردن آنها مناسب نیست.&lt;/p>
+&lt;h2 id="مواردی-که-حتما-باید-در-نظر-داشته-باشید">مواردی که حتما باید در نظر داشته باشید&lt;/h2>
+&lt;h3 id="۱-بین-سرور-محلی-و-خارجی">۱. بین سرور محلی و خارجی&lt;/h3>
+&lt;p>وقتی دو سرور محلی و خارجی دارید، و از تانلینگ بین این دو سرور استفاده میکنید، برای پورت(های) سرویس (های) سرور خارج، امکان ارتباط را فقط برای سرور محلی فراهم کنید.&lt;/p>
+&lt;p>به عنوان مثال اگر سرور محلی شما با آدرس a.b.c.d در دسترس است، و با پورت های ۴۴۳و ۸۴۴۳ در حال سرویس دهی است، دستورات زیر را بکار ببرید:&lt;/p>
+&lt;pre tabindex="0">&lt;code>iptables -A INPUT ! -s a.b.c.d -p tcp -m tcp --dport 443 -j DROP
+iptables -A INPUT ! -s a.b.c.d -p tcp -m tcp --dport 8443 -j DROP
+&lt;/code>&lt;/pre>&lt;p>اگر از netfilter-persistent استفاده میکنید، موراد را به شکل زیر را در فایل مربوطه ذخیره کنید:&lt;/p>
+&lt;p>File: &lt;code>/etc/iptables/rules.v4&lt;/code>&lt;/p>
+&lt;pre tabindex="0">&lt;code>*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT ! -s a.b.c.d -p tcp -m tcp --dport 443 -j DROP
+-A INPUT ! -s a.b.c.d -p tcp -m tcp --dport 8443 -j DROP
+COMMIT
+&lt;/code>&lt;/pre>&lt;p>و سپس سرویس مربوطه را ریستارت کنید:&lt;/p>
+&lt;pre tabindex="0">&lt;code>systemctl restart netfilter-persistent.service
+&lt;/code>&lt;/pre>&lt;h3 id="۲-استفاده-از-تانل-reverse">۲. استفاده از تانل reverse&lt;/h3>
+&lt;p>اگر سرور داخلی شما توسط ارتباط معکوس با سرور خارج تانل شده است (reverse) بهتر است هیچ سرویسی روی inbound در سرور خارج تعریف نشود و در صورت لزوم به داشتن آن، به سرور محلی محدود شود.&lt;/p>
+&lt;h3 id="۳-ارتباط-مستقیم-از-یک-پروایدر">۳. ارتباط مستقیم از یک پروایدر&lt;/h3>
+&lt;p>اگر همه استفاده کننده های سرور شما از یک منطقه جغرافیایی و فقط از طریق یک فراهم کننده خدمات اینترنتی سرویس میگیرند، بهتر است به کل محدوده IP های آن شرکت محدود شود.&lt;/p>
+&lt;h3 id="۴-محدود-کردن-ارتباط-سرور-با-ایران">۴. محدود کردن ارتباط سرور با ایران&lt;/h3>
+&lt;p>اگر کانفیگ را به صورت رایگان پخش می‌کنید، می‌توانید فایروال را به نحوی تنظیم کنید که برای پورت مورد استفاده در کانفیگ‌ها، تنها امکان اتصال از IP کشور مورد نظر شما (مثلا ایران) وجود داشته باشد. چون تعریف لیست IP یک کشور نیاز به سخت افزار قوی دارد، تعریف چنین محدودیتی در سرور راحت نیست. ولی اگر از سرویس ابری استفاده می‌کنید، سرویس فایروال این سرویس‌های ابری، ایجاد قوانین فایروال بر اساس کشور را ارائه می‌دهد.
+همچنین برای افزایش امنیت پنل و پیدا نشدن آن توسط سیستم فیلترینگ، می‌توانید برای پورت پنل تنظیمات برعکسی را انجام دهید که پنل از داخل کشور مبدا (مثلا ایران) باز نشود و خودتان برای اتصال به پنل، از VPN استفاده کنید.&lt;/p></description></item><item><title>Docs: فالبک</title><link>/fa/docs/security/fallback/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/fa/docs/security/fallback/</guid><description>
+&lt;p>نقل از &lt;a href="https://xtls.github.io/en/config/features/fallback.html#fallback">راهنمای XTLS&lt;/a>&lt;/p>
+&lt;blockquote>
+&lt;p>فالبک یکی از قدرتمندترین ویژگی های Xray است که می تواند به طور موثر از کاوش فعال (Active Probing) جلوگیری کند و به شما امکان می دهد از یک پورت برای چندین سرویس استفاده کنید.
+ویژگی ضد کاوش فعال با قدرت بالا، مکانیزم منحصربه‌فرد ارسال جواب در اولین درخواست را دارد.
+فالبک همچنین می تواند انواع مختلف ترافیک را بر اساس مسیر (path) برای اشتراک بین چند سرویس را روی یک پورت ارائه کند.&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="کمک-های-اصلی-فالبک">کمک های اصلی فالبک&lt;/h2>
+&lt;p>۱. به جای تقسیم ترافیک بین پورت های ناشناخته و متعدد از یک پورت و یا چند پورت شناخته شده استفاده میشود. در این حالت، وقتی ترافیک زیادی به سمت سرور میرسد، از نظر فیلترچی مشکوک به نظر نمیرسد.&lt;/p>
+&lt;p>۲. هدر های پراکسی به جای معرفی xray ، به صورت نرم افزار های شناخته شده مثل nginx معرفی میشوند تا فیلترچی و ربات‌ها از روی اطلاعات هدر نتوانند ماهیت سرور را تشخیص دهند.&lt;/p>
+&lt;p>۳. با توجه به خاصیت ضد کاوش فعال (Anti Active Probing) وقتی تقاضاهای متعددی برای تشخیص نوع فعالیت سرور ارسال میشود، فالبک با تشخیص آنها، جوابی شبیه سرور معمولی وب ارسال میکند تا مشکوک به نظر نرسد.&lt;/p>
+&lt;p>۴. با ترکیب فالبک و نرم افزار های دیگر پراکسی وب مانند nginx و HAproxy میتوان قابلیت های جذاب دیگری اضافه کرد که باعث گمراه شدن تست های دستی میشود. به عنوان مثال با ارسال همه درخواست های ناشناس به nginx میتوان مانند یک وبسایت معمولی و یا سرور api به درخواست جواب داد.&lt;/p>
+&lt;h2 id="محدودیت-ها">محدودیت ها&lt;/h2>
+&lt;p>۱. فالبک را فقط میتوان روی سرویس های VLESS و Trojan تنظیم کرد. مدل انتقال (transmission) سرویس حتما باید TCP باشد و حتما TLS فعال و گواهی ها به درستی تنظیم شده باشد.&lt;/p>
+&lt;p>۲. بدون استفاده از نرم افزار های کمکی، برای تعریف سرویس جدید در پشت فالبک، فقط میتوانید از مدل های انتقال H2، HTTP و WebSocket استفاده کنید.&lt;/p>
+&lt;p>۳. سرویس های پشت فالبک حتما باید بدون TLS باشند.&lt;/p>
+&lt;h2 id="مدل-های-ترکیبی-استفاده-از-فالبک">مدل های ترکیبی استفاده از فالبک&lt;/h2>
+&lt;p>با ترکیب فالبک و نرم افزارهای دیگر میتوانید از خاصیت ها و پروتکل های بیشتری استفاده کنید&lt;/p>
+&lt;h3 id="فالبک-پشت-پراکسی">فالبک پشت پراکسی&lt;/h3>
+&lt;p>در این حالت جوابگوی اصلی روی پورت سرور، نرم افزار پراکسی است و بر اساس درخواست کاربر به سمت فالبک و یا سرویس های دیگر هدایت میشود. مزیت این حالت استفاده از امکانات بیشتر نرم افزار پراکسی است.&lt;/p>
+&lt;p>&lt;img src="../proxy-fallback.png" alt="">&lt;/p>
+&lt;h3 id="پراکسی-پشت-فالبک">پراکسی پشت فالبک&lt;/h3>
+&lt;p>برای استفاده از خاصیت های ضد تشخیص فعال پرقدرت فالبک این روش میتواند بهترین اثر را داشته باشد. در این حالت جوابگوی اصلی درخواست کاربر، سرویس فالبک است و براساس تنظیمات مشخص شده، ترافیک را به سرویس های دیگر و یا نرم افزار پراکسی هدایت میکند.&lt;/p>
+&lt;p>&lt;img src="../fallback-proxy.png" alt="">&lt;/p></description></item><item><title>Docs: زنجیره پراکسی ها</title><link>/fa/docs/security/chains/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/fa/docs/security/chains/</guid><description>
+&lt;p>به صورت عمومی، استفاده از ارتباط مستقیم کاربر با سرور اصلی توصیه نمیشود. این کار باعث امنیت پایین و تشخیص زود هنگام سرور شما توسط فیلترچی و ربات ها میشود.&lt;/p>
+&lt;h2 id="پرکاربرد-ترین-پراکسی-ها">پرکاربرد ترین پراکسی ها&lt;/h2>
+&lt;p>خود نرم افزار xray به عنوان یک پراکسی قوی با امکانات زیاد برای پنهان شدن از دید فیلترچی استفاده میشود. به دلیل استفاده زیاد از این نرم افزار، فیلترچی به دنبال شناسایی و فیلترکردن ارتبطات با این سرورهاست. برای اینکه سرور اصلی از گزند فیلترچی در امان بماند، بهتر است از ترکیب یک یا چند پراکسی دیگر استفاده کرد.&lt;/p>
+&lt;h3 id="۱-سرویسهای-ابری">۱. سرویس‌های ابری&lt;/h3>
+&lt;p>سرویس های ابری امروزه به عنوان یکی از پر کاربرد ترین روشها برای افزایش امنیت، سرعت و راحتی وب سایت ها به کار میرود. شما میتوانید با پنهان کردن سرور خود پشت این سرویس ها به مخفی سازی سرور اصلی کمک کنید.
+&lt;img src="../cloud-proxy.png" alt="">
+&lt;div class="alert alert-success" role="alert">
+&lt;h4 class="alert-heading">مزایا&lt;/h4>
+&lt;ul>
+&lt;li>سادگی&lt;/li>
+&lt;li>وجود سرویس های رایگان&lt;/li>
+&lt;li>امکان استفاده از سرویس های grpc,WebSocker,HTTP,H2&lt;/li>
+&lt;/ul>
+&lt;/div>
+&lt;div class="alert alert-warning" role="alert">
+&lt;h4 class="alert-heading">معایب&lt;/h4>
+&lt;ul>
+&lt;li>دارای قوانین متفاوت&lt;/li>
+&lt;li>لزوم تغییر آدرس ها&lt;/li>
+&lt;li>امکان فیلتر شدن آدرس های سرویس ابری&lt;/li>
+&lt;li>امکان استفاده از پورت های محدود و مشخص در نسخه رایگان&lt;/li>
+&lt;/ul>
+&lt;/div>
+&lt;/p>
+&lt;h3 id="۲-سرور-پراکسی-محلی">۲. سرور پراکسی محلی&lt;/h3>
+&lt;p>با استفاده از یک نرم افزار پراکسی نظیر nginx و یا HAproxy روی یک سرور محلی میتوانید ترافیک کاربران را به جای ارسال مستقیم به خارج، به سرور محلی بفرستید. این ترکیب نیاز به داشتن اطلاعات کافی برای تنظیم این نرم افزارها دارد.
+&lt;img src="../local-proxy.png" alt="">
+&lt;div class="alert alert-success" role="alert">
+&lt;h4 class="alert-heading">مزایا&lt;/h4>
+&lt;ul>
+&lt;li>امکانات بیشتر&lt;/li>
+&lt;li>فیلترینگ روی دیتاسنترهای محلی کمتر اعمال میشود&lt;/li>
+&lt;li>تغییر آدرس و ارسال درخواست ها با پارامتر های مناسب&lt;/li>
+&lt;li>استفاده رایگان از نرم افزار&lt;/li>
+&lt;li>امکان استفاده از پرتکل های بیشتر&lt;/li>
+&lt;/ul>
+&lt;/div>
+&lt;div class="alert alert-warning" role="alert">
+&lt;h4 class="alert-heading">معایب&lt;/h4>
+&lt;ul>
+&lt;li>نیاز به کار با محیط متنی و اتصال به سرور&lt;/li>
+&lt;li>همه درخواست ها با آدرس سرور محلی در سرور خارج دریافت میشود&lt;/li>
+&lt;li>سرور محلی باید خریداری شود&lt;/li>
+&lt;li>محدودیت های دیتاسنترهای محلی&lt;/li>
+&lt;li>خطر شناسایی خریدار سرور&lt;/li>
+&lt;/ul>
+&lt;/div>
+&lt;/p>
+&lt;h3 id="۳-استفاده-از-port-forward">۳. استفاده از Port forward&lt;/h3>
+&lt;p>با استفاده از نرم افزار iptables در لینوکس، شما میتوانید از ویژگی port forward استفاده کنید.
+&lt;img src="../iptables-portforward.png" alt="">&lt;/p>
+&lt;p>برای این کار باید از دیتاسنترهای محلی سرور تهیه کنید و تنظیمات زیر را روی سرور اعمال کنید:&lt;/p>
+&lt;p>توضیح: آدرس فرضی a.b.c.d برای آدرس IP سرور خارج درنظر گرفته شده. لطفا با آدرس واقعی تعویض شود.&lt;/p>
+&lt;pre tabindex="0">&lt;code>iptables -A PREROUTING -p tcp -m tcp --dport 22 -j ACCEPT
+iptables -A PREROUTING -p icmp -j ACCEPT
+iptables -A PREROUTING -j DNAT --to-destination a.b.c.d
+&lt;/code>&lt;/pre>&lt;ol>
+&lt;li>دستور اول پورت ssh را برای دسترسی به سرور محلی استثنا میکند.&lt;/li>
+&lt;li>دستور دوم برای عدم ارسال ping به سرور خارج استفاده شده.&lt;/li>
+&lt;li>دستور سوم بقیه درخواست ها را به آدرس سرور خارج ارسال میکند&lt;/li>
+&lt;/ol>
+&lt;p>
+&lt;div class="alert alert-success" role="alert">
+&lt;h4 class="alert-heading">مزایا&lt;/h4>
+&lt;ul>
+&lt;li>سادگی&lt;/li>
+&lt;li>فیلترینگ روی دیتاسنترهای محلی کمتر اعمال میشود&lt;/li>
+&lt;li>قابلیت استفاده از همه پروتکل ها&lt;/li>
+&lt;li>در صورت فیلتر شدن سرور خارجی، میتوان به راحتی با تغییر دستور سوم، سرور جدید را معرفی کرد&lt;/li>
+&lt;/ul>
+&lt;/div>
+&lt;div class="alert alert-warning" role="alert">
+&lt;h4 class="alert-heading">معایب&lt;/h4>
+&lt;ul>
+&lt;li>نیاز به کار با محیط متنی و اتصال به سرور&lt;/li>
+&lt;li>همه درخواست ها با آدرس سرور محلی در سرور خارج دریافت میشود&lt;/li>
+&lt;li>سرور محلی باید خریداری شود&lt;/li>
+&lt;li>محدودیت های دیتاسنترهای محلی&lt;/li>
+&lt;li>خطر شناسایی خریدار سرور&lt;/li>
+&lt;/ul>
+&lt;/div>
+&lt;/p>
+&lt;h3 id="۴-استفاده-از-dokodemo-door">۴. استفاده از dokodemo-door&lt;/h3>
+&lt;p>این مدل میتواند تا حدودی بهتر از مدل قبلی کار کند، ولی از نظر نوع کارکرد مشابه هستند.&lt;/p>
+&lt;p>تفاوت اصلی این روش این است که ترافیک دریافت شده قابلیت گذر از تنظیمات مسیریابی xray را دارد و میتوان با x-ui تمامی عملیات ها را با پنل وب انجام داد.&lt;/p>
+&lt;p>برای اینکار میبایست روی سرور محلی سرور xray و یا x-ui را نصب کرده و برای هر سرویس یک dokodemo-door با پورت مجزا تعیین کنید.
+در تنظیم زیر پورت ۸۴۴۳ سرور محلی به پورت ۸۴۴۳ از سرور خارج ارسال میشود:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-json" data-lang="json">&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;listen&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#204a87;font-weight:bold">null&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;port&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">8443&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;protocol&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;dokodemo-door&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;settings&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;address&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;a.b.c.d&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;port&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">8443&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;network&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;tcp&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;followRedirect&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#204a87;font-weight:bold">false&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>تنظیم مشابه در x-ui:
+&lt;img src="../dokodemo-door.png" alt="">&lt;/p>
+&lt;p>
+&lt;div class="alert alert-success" role="alert">
+&lt;h4 class="alert-heading">مزایا&lt;/h4>
+&lt;ul>
+&lt;li>سادگی&lt;/li>
+&lt;li>امکان استفاده از روتینگ ها و امکانات xray&lt;/li>
+&lt;li>فیلترینگ روی دیتاسنترهای محلی کمتر اعمال میشود&lt;/li>
+&lt;li>قابلیت استفاده از همه پروتکل ها&lt;/li>
+&lt;li>در صورت فیلتر شدن سرور خارجی، میتوان به راحتی با تغییر آدرس، از سرور جدید استفاده کرد&lt;/li>
+&lt;/ul>
+&lt;/div>
+&lt;div class="alert alert-warning" role="alert">
+&lt;h4 class="alert-heading">معایب&lt;/h4>
+&lt;ul>
+&lt;li>همه درخواست ها با آدرس سرور محلی در سرور خارج دریافت میشود&lt;/li>
+&lt;li>سرور محلی باید خریداری شود&lt;/li>
+&lt;li>محدودیت های دیتاسنترهای محلی&lt;/li>
+&lt;li>خطر شناسایی خریدار سرور&lt;/li>
+&lt;/ul>
+&lt;/div>
+&lt;/p>
+&lt;h3 id="۵-زنجیره-xray">۵. زنجیره xray&lt;/h3>
+&lt;p>یکی از قابلیت های فوق العاده نرم افزارهای v2ray/xray امکان اتصال به به سرور دیگر و تشکیل زنجیره پراکسی هاست. به طور کلی، دو بخش مهم این نرم افزار ها به ایجاد زنجیره کمک میکنند:&lt;/p>
+&lt;ol>
+&lt;li>inbound: وظیفه دریافت درخواست‌ها را دارد&lt;/li>
+&lt;li>outbound: وظیفه ارسال درخواست‌ها را دارد&lt;/li>
+&lt;/ol>
+&lt;p>در واقع نرم افزار سمت کاربر هم از همین متد برای اتصال استفاده میکند. سپس تمام ترافیک را به خروجی (outbound) ارسال میکند.
+در سرور هدف، ترافیک ورودی (inbound) دریافت شده و به خروجی (outbound) ارسال میشود. این زنجیره ادامه دارد تا اینکه یک سرور که در دنیای اینترنت آزاد قرار دارد، از طریق پروتکل هایی نظیر freedom در بخش outbound خود بتوانند درخواست کاربر اولیه را به سرور مقصد هدایت کنند.&lt;/p>
+&lt;p>&lt;img src="../xray-chain.png" alt="">&lt;/p>
+&lt;p>در این میان، نقش بخش هایی نظیر routing برای مسیردهی به درخواست ها باید در نظر گرفته شود.(خطوط آبی در شکل بالا)&lt;/p>
+&lt;p>برای استفاده از مزایای این روش، میبایست خروجی سرورها به سرور بعدی متصل شود.&lt;/p>
+&lt;p>نمونه تنظیم بخش خروجی (outbound)در تنظیمات xray:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-json" data-lang="json">&lt;span style="display:flex;">&lt;span> &lt;span style="color:#4e9a06">&amp;#34;outbounds&amp;#34;&lt;/span>&lt;span style="color:#a40000">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;tag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;next_xray&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;protocol&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;vless&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;settings&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;vnext&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;address&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;a.b.c.d&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;port&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">1443&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;users&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;encryption&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;none&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;streamSettings&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;network&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;tcp&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;security&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;none&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;protocol&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;freedom&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;settings&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">{},&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;tag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;direct&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;protocol&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;blackhole&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;settings&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">{},&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;tag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;blocked&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">]&lt;/span>&lt;span style="color:#a40000">,&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: تانل معکوس</title><link>/fa/docs/security/reverse/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/fa/docs/security/reverse/</guid><description>
+&lt;h2 id="تانل-مستقیم">تانل مستقیم&lt;/h2>
+&lt;p>در روش های تانلیگ، ارتباط کاربر A با سرور داخلی ‌B به صورت معمولی برقرار میشود.&lt;/p>
+&lt;p>ارتباط سرورها از طریق اتصال بین خروجی سرور B با ورودی سرور C انجام میشود.&lt;/p>
+&lt;p>&lt;img src="../v2ray-tunnel.png" alt="">&lt;/p>
+&lt;h2 id="تانل-معکوس">تانل معکوس&lt;/h2>
+&lt;p>در روش معکوس اما از طریق دو تنظیم مخصوص، به صورت سرور C به سرور ‌B انجام میشود:&lt;/p>
+&lt;ol>
+&lt;li>پرتال (portal): دو ورودی را به همدیگر متصل میکند (سرور B)&lt;/li>
+&lt;li>پل (bridge): دو خروجی را به همدیگر متصل میکند (سرور C)&lt;/li>
+&lt;/ol>
+&lt;p>&lt;img src="../reverse-proxy.png" alt="">&lt;/p>
+&lt;p>در این روش ایجاد ارتباط وظیفه سرور خارج (C) است و به دلیل اینکه بیشتر سیستم فیلترینگ فقط ارتباط شبکه محلی به شبکه اینترنت را مختل میکند، این ارتباط برقرار خواهد ماند. بهترین ویژگی این روش این است که حتی سرورهای فیلتر شده هم میتوانند از این خاصیت استفاده کنند.&lt;/p>
+&lt;ul>
+&lt;li>در صورت قطعی دوطرفه شبکه، این ارتباطات نیز تحت تاثیر قرار خواهند گرفت.&lt;/li>
+&lt;/ul>
+&lt;p>نمونه کد برای این مدل ارتباط را میتوانید در ادامه بررسی کنید.&lt;/p>
+&lt;h3 id="پیکربندی-پل">پیکربندی پل&lt;/h3>
+&lt;p>یک پل معمولاً به دو خروجی نیاز دارد، یکی برای اتصال به پورتال و دیگری برای ارسال ترافیک واقعی. یعنی برای تشخیص این دو نوع ترافیک باید از مسیریابی استفاده کنید.&lt;/p>
+&lt;p>پیکربندی معکوس پروکسی:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-json" data-lang="json">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;bridges&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;tag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;bridge&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;domain&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;test.xray.com&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>پیکربندی خروجی:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-json" data-lang="json">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;tag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;out&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;protocol&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;freedom&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;settings&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">{}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>&lt;span style="color:#a40000">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;protocol&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;vless&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;settings&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;vnext&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;address&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;portal&amp;#39;s IP address&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;port&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">1024&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;users&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;5783a3e7-e373-51cd-8642-c83782b807c5&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;tag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;interconn&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>پیکربندی قوانین مسیریابی:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-json" data-lang="json">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;rules&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;field&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;inboundTag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;bridge&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">],&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;domain&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;full:test.xray.com&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">],&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;outboundTag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;interconn&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;field&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;inboundTag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;bridge&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">],&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;outboundTag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;out&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="پیکربندی-پرتال">پیکربندی پرتال&lt;/h3>
+&lt;p>در پورتال به دو ورودی نیاز دارد، یکی برای دریافت اتصالات از پل، و دیگری برای دریافت ترافیک واقعی. همچنین باید بین این دو نوع ترافیک با استفاده از مسیریابی تمایز ایجاد کنید.&lt;/p>
+&lt;p>پیکربندی معکوس پروکسی:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-json" data-lang="json">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;portals&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;tag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;portal&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;domain&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;test.xray.com&amp;#34;&lt;/span> &lt;span style="color:#8f5902;font-style:italic">// Must be the same as the bridge&amp;#39;s configuration
+&lt;/span>&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#8f5902;font-style:italic">&lt;/span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>پیکربندی ورودی:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-json" data-lang="json">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;tag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;external&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;port&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">80&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;protocol&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;dokodemo-door&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;settings&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;address&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;127.0.0.1&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;port&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">80&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;network&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;tcp&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>&lt;span style="color:#a40000">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;port&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#0000cf;font-weight:bold">1024&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;tag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;interconn&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;protocol&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;vmess&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;settings&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;clients&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;id&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;5783a3e7-e373-51cd-8642-c83782b807c5&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>پیکربندی قوانین مسیریابی:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-json" data-lang="json">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;rules&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;field&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;inboundTag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;external&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">],&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;outboundTag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;portal&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;type&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;field&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;inboundTag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#000;font-weight:bold">[&lt;/span>&lt;span style="color:#4e9a06">&amp;#34;interconn&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">],&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#204a87;font-weight:bold">&amp;#34;outboundTag&amp;#34;&lt;/span>&lt;span style="color:#000;font-weight:bold">:&lt;/span> &lt;span style="color:#4e9a06">&amp;#34;portal&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#000;font-weight:bold">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#000;font-weight:bold">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>بیشتر بخوانید:&lt;/p>
+&lt;ol>
+&lt;li>&lt;a href="https://xtls.github.io/en/config/reverse.html">https://xtls.github.io/en/config/reverse.html&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://www.v2ray.com/en/configuration/reverse.html">https://www.v2ray.com/en/configuration/reverse.html&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://guide.v2fly.org/en_US/app/reverse.html">https://guide.v2fly.org/en_US/app/reverse.html&lt;/a>&lt;/li>
+&lt;/ol></description></item><item><title>Docs: تغییر در روتینگ</title><link>/fa/docs/security/routing/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/fa/docs/security/routing/</guid><description>
+&lt;h2 id="بلاک-کردن-سایتها-و-ip-های-ایرانی">بلاک کردن سایت‌ها و IP های ایرانی&lt;/h2>
+&lt;p>یکی از روش‌های شناسایی سرورهای پروکسی و فیلتر کردن آن‌ها، بررسی ترافیک خروجی سرور است. وقتی از یکی سرور خارج از ایران، تعداد زیادی درخواست به سرویس‌های ایرانی که صرفا به درد ایرانی‌ها می‌خورد (مثل اسنپ و دیجی کالا) انجام می‌شود، سیستم فیلترینگ به سرور مورد نظر مشکوک می‌شود و ممکن است آن را فیلتر کند. راه مقابله با این تهدید، بلاک کردن تمام سایت‌ها و IP های ایرانی در سرور است که این قابلیت در پنل دیده شده است.
+برای بهبود تجربه کاربر، می‌توان به کاربر گفت که این سایت‌ها و IPها را Direct کند که ترافیک این سایت‌ها مستقیم از کلاینت به سمت سرور ایرانی برود و کاربر تفاوتی را متوجه نشود. این کار از این جهت که کل ترافیک کاربر صرفا به سمت یه IP خاص نخواهد بود هم می‌تواند مفید باشد. همچنین اگر زنجیره پراکسی وجود دارد، می‌توان این ترافیک را در سرور داخل کشور Direct کرد.
+آموزش Direct کردن از طرف کلاینت
+&lt;a href="https://github.com/MasterKia/iran-hosted-domains">https://github.com/MasterKia/iran-hosted-domains&lt;/a>
+با انجام تمام این کارها، باز هم امکان شناسایی سرور از طریق دیتای خروجی وجود دارد. منبع:
+&lt;a href="https://twitter.com/imMohammad20000/status/1666761832952995841?s=19">https://twitter.com/imMohammad20000/status/1666761832952995841?s=19&lt;/a>&lt;/p>
+&lt;h2 id="ارتقای-امنیت-کاربر-از-طریق-بلاک-کردن-سایتهای-حاوی-بدافزار-و-tracker-ها">ارتقای امنیت کاربر از طریق بلاک کردن سایت‌های حاوی بدافزار و tracker ها&lt;/h2>
+&lt;p>برای این کار باید از دو قابلیت جداگانه موجود در پنل در بلاک کردن سایت های حاوی بدافزار و بلاک کردن سرویس های تبلیغاتی (شامل trackerها) استفاده کرد. همچنین استفاده از Adguard DNS در سرور می‌تواند کیفیت بلاک کردن tracker ها را ارتقا دهد. توضیحات مروبط به Adguard DNS:
+&lt;a href="https://adguard-dns.io/en/public-dns.html">https://adguard-dns.io/en/public-dns.html&lt;/a>&lt;/p></description></item></channel></rss>
